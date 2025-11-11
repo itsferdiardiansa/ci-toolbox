@@ -27,15 +27,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Checkout ci-toolbox
-        uses: actions/checkout@v4
-        with:
-          repository: itsferdiardiansa/ci-toolbox
-          ref: ${{ github.workflow_ref }}
-          path: .ci-toolbox
-          
       - name: Setup
-        uses: ./.ci-toolbox/actions/setup-node
+        uses: ./actions/setup-node
 
       - name: Build PR branch
         run: pnpm bundle
@@ -50,15 +43,8 @@ jobs:
         with:
           ref: main
 
-      - name: Checkout ci-toolbox (main branch)
-        uses: actions/checkout@v4
-        with:
-          repository: itsferdiardiansa/ci-toolbox
-          ref: ${{ github.ref_name }}
-          path: .ci-toolbox
-
       - name: Setup
-        uses: ./.ci-toolbox/actions/setup-node
+        uses: ./actions/setup-node
       
       - name: Build main branch
         run: pnpm bundle
@@ -98,15 +84,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Checkout ci-toolbox
-        uses: actions/checkout@v4
-        with:
-          repository: itsferdiardiansa/ci-toolbox
-          ref: ${{ github.workflow_ref }}
-          path: .ci-toolbox
-
       - name: Post or Update Comment
-        uses: ./.ci-toolbox/actions/post-comment
+        uses: ./actions/post-comment
         with:
           github-token: ${{ secrets.GH_TOKEN }}
           issue-number: ${{ inputs.issue-number }}
