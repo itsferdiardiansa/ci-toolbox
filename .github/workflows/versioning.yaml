@@ -42,15 +42,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Checkout ci-toolbox
-        uses: actions/checkout@v4
-        with:
-          repository: itsferdiardiansa/ci-toolbox
-          ref: ${{ github.workflow_ref }}
-          path: .ci-toolbox
-
       - name: Setup
-        uses: ./.ci-toolbox/actions/setup-node
+        uses: itsferdiardiansa/ci-toolbox/actions/setup-node@v1.0.0
 
       - name: Install jq
         run: sudo apt-get install -y jq
