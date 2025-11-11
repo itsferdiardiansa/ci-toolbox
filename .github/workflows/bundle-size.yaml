@@ -1,0 +1,93 @@
+name: wc-bundle-size
+
+on:
+  workflow_call:
+    inputs:
+      issue-number:
+        description: 'The PR number'
+        required: true
+        type: number
+    secrets:
+      GITHUB_TOKEN:
+        required: true
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  analyze-bundle:
+    name: analyze bundle size
+    runs-on: ubuntu-latest
+    outputs:
+      comment-body: ${{ steps.format_comment.outputs.body }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup
+        uses: itsferdiardiansa/ci-toolbox/actions/setup-node@${{ github.ref_name }}
+
+      - name: Build PR branch
+        run: pnpm bundle
+
+      - name: Get PR branch file sizes
+        run: |
+          echo "PR_JS_SIZE=$(ls -l dist/umd/clera-ui.min.js | awk '{print $5}' || echo "0")" >> $GITHUB_ENV
+          echo "PR_CSS_SIZE=$(ls -l dist/umd/clera-ui.min.css | awk '{print $5}' || echo "0")" >> $GITHUB_ENV
+
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup
+        uses: itsferdiardiansa/ci-toolbox/actions/setup-node@${{ github.ref_name }}
+      
+      - name: Build main branch
+        run: pnpm bundle
+      
+      - name: Get main branch file sizes
+        run: |
+          echo "MAIN_JS_SIZE=$(ls -l dist/umd/clera-ui.min.js | awk '{print $5}' || echo "0")" >> $GITHUB_ENV
+          echo "MAIN_CSS_SIZE=$(ls -l dist/umd/clera-ui.min.css | awk '{print $5}' || echo "0")" >> $GITHUB_ENV
+      
+      - name: Format comment body
+        id: format_comment
+        run: |
+          PR_JS=$((${PR_JS_SIZE:-0} / 1000))
+          PR_CSS=$((${PR_CSS_SIZE:-0} / 1000))
+          MAIN_JS=$((${MAIN_JS_SIZE:-0} / 1000))
+          MAIN_CSS=$((${MAIN_CSS_SIZE:-0} / 1000))
+          DIFF_JS=$((${PR_JS_SIZE:-0} - ${MAIN_JS_SIZE:-0}))
+          DIFF_CSS=$((${PR_CSS_SIZE:-0} - ${MAIN_CSS_SIZE:-0}))
+          {
+            echo 'body<<EOF'
+            echo '## 📦 Bundle Size Report'
+            echo ''
+            echo '| File | main | PR | Change |'
+            echo '| :--- | ---: | ---: | ---: |'
+            echo "| \`clera-ui.min.js\` | \`$MAIN_JS kB\` | \`$PR_JS kB\` | \`$DIFF_JS B\` |"
+            echo "| \`clera-ui.min.css\` | \`$MAIN_CSS kB\` | \`$PR_CSS kB\` | \`$DIFF_CSS B\` |"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+  
+  comment-pr:
+    name: comment-pr
+    runs-on: ubuntu-latest
+    needs: analyze-bundle
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Post or Update Comment
+        uses: itsferdiardiansa/ci-toolbox/actions/post-comment@${{ github.ref_name }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ inputs.issue-number }}
+          comment-id: bundle-size-report
+          body: ${{ needs.analyze-bundle.outputs.comment-body }}
