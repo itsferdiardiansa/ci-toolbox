@@ -97,10 +97,7 @@ jobs:
           branch: "changeset-release/main"
           title: ${{ env.COMMIT_MSG }}
           body: ${{ steps.capture_versions.outputs.PR_BODY }}
-          add-paths: |
-            .changeset/
-            CHANGELOG.md
-            package.json
-            pnpm-lock.yaml
           delete-branch: true
           labels: release, automated
+        env:
+          HUSKY: 0
