@@ -29,7 +29,8 @@ on:
         default: 'clera-ui.min.css'
     secrets:
       GH_TOKEN:
-        required: true
+        description: 'Deprecated — the built-in GITHUB_TOKEN is used for PR comments. Kept optional for backward compatibility.'
+        required: false
 
 permissions:
   pull-requests: write
@@ -107,7 +108,7 @@ jobs:
       - name: Post or Update Comment
         uses: itsferdiardiansa/ci-toolbox/actions/post-comment@v1.0.0
         with:
-          github-token: ${{ secrets.GH_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ inputs.issue-number }}
           comment-id: bundle-size-report
           body: ${{ needs.analyze-bundle.outputs.comment-body }}
