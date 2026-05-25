@@ -7,6 +7,26 @@ on:
         description: 'The PR number'
         required: true
         type: number
+      build-command:
+        description: 'Command that produces the bundle'
+        required: false
+        type: string
+        default: 'pnpm bundle'
+      artifact-dir:
+        description: 'Directory containing the built UMD assets (relative to repo root)'
+        required: false
+        type: string
+        default: 'dist/umd'
+      js-file:
+        description: 'Minified JS filename to measure'
+        required: false
+        type: string
+        default: 'clera-ui.min.js'
+      css-file:
+        description: 'Minified CSS filename to measure'
+        required: false
+        type: string
+        default: 'clera-ui.min.css'
     secrets:
       GH_TOKEN:
         required: true
@@ -31,12 +51,12 @@ jobs:
         uses: itsferdiardiansa/ci-toolbox/actions/setup-node@v1.0.0
 
       - name: Build PR branch
-        run: pnpm bundle
+        run: ${{ inputs.build-command }}
 
       - name: Get PR branch file sizes
         run: |
-          echo "PR_JS_SIZE=$(ls -l dist/umd/clera-ui.min.js | awk '{print $5}' || echo "0")" >> $GITHUB_ENV
-          echo "PR_CSS_SIZE=$(ls -l dist/umd/clera-ui.min.css | awk '{print $5}' || echo "0")" >> $GITHUB_ENV
+          echo "PR_JS_SIZE=$(ls -l ${{ inputs.artifact-dir }}/${{ inputs.js-file }} | awk '{print $5}' || echo "0")" >> $GITHUB_ENV
+          echo "PR_CSS_SIZE=$(ls -l ${{ inputs.artifact-dir }}/${{ inputs.css-file }} | awk '{print $5}' || echo "0")" >> $GITHUB_ENV
 
       - name: Checkout main branch
         uses: actions/checkout@v4
@@ -47,12 +67,12 @@ jobs:
         uses: itsferdiardiansa/ci-toolbox/actions/setup-node@v1.0.0
       
       - name: Build main branch
-        run: pnpm bundle
-      
+        run: ${{ inputs.build-command }}
+
       - name: Get main branch file sizes
         run: |
-          echo "MAIN_JS_SIZE=$(ls -l dist/umd/clera-ui.min.js | awk '{print $5}' || echo "0")" >> $GITHUB_ENV
-          echo "MAIN_CSS_SIZE=$(ls -l dist/umd/clera-ui.min.css | awk '{print $5}' || echo "0")" >> $GITHUB_ENV
+          echo "MAIN_JS_SIZE=$(ls -l ${{ inputs.artifact-dir }}/${{ inputs.js-file }} | awk '{print $5}' || echo "0")" >> $GITHUB_ENV
+          echo "MAIN_CSS_SIZE=$(ls -l ${{ inputs.artifact-dir }}/${{ inputs.css-file }} | awk '{print $5}' || echo "0")" >> $GITHUB_ENV
       
       - name: Format comment body
         id: format_comment
@@ -69,8 +89,8 @@ jobs:
             echo ''
             echo '| File | main | PR | Change |'
             echo '| :--- | ---: | ---: | ---: |'
-            echo "| \`clera-ui.min.js\` | \`$MAIN_JS kB\` | \`$PR_JS kB\` | \`$DIFF_JS B\` |"
-            echo "| \`clera-ui.min.css\` | \`$MAIN_CSS kB\` | \`$PR_CSS kB\` | \`$DIFF_CSS B\` |"
+            echo "| \`${{ inputs.js-file }}\` | \`$MAIN_JS kB\` | \`$PR_JS kB\` | \`$DIFF_JS B\` |"
+            echo "| \`${{ inputs.css-file }}\` | \`$MAIN_CSS kB\` | \`$PR_CSS kB\` | \`$DIFF_CSS B\` |"
             echo 'EOF'
           } >> "$GITHUB_OUTPUT"
   
